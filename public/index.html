@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="./libsignal-protocol.js"></script>
+    <script src="./store.js"></script>
+    <script>
+        function stringToArrayBuffer(str) {
+            var arr = new Uint8Array(str.length);
+            for (var i = str.length; i--;)
+                arr[i] = str.charCodeAt(i);
+            return arr.buffer;
+        }
+
+        function arrayBufferToString(buffer) {
+            var arr = new Uint8Array(buffer);
+            var str = String.fromCharCode.apply(String, arr);
+            return str;
+        }
+    </script>
+    <script>
+        let keyHelper = libsignal.KeyHelper
+        let registrationId = keyHelper.generateRegistrationId()
+        let store = new SignalProtocolStore()
+
+        localStorage.setItem('registrationId', registrationId)
+        let pub, pri
+        keyHelper.generateIdentityKeyPair().then(kp => {
+            pub = kp.pubKey
+            priv = kp.privKey
+            console.log(pub, pri)
+            store.put('kasdlf', arrayBufferToString(pub))
+            localStorage.setItem('pub', arrayBufferToString(pub))
+            localStorage.setItem('priv', arrayBufferToString(priv))
+        })
+
+
+        keyHelper.generatePreKey(keyId).then(function (preKey) {
+            store.storePreKey(preKey.keyId, preKey.keyPair);
+        });
+
+        keyHelper.generateSignedPreKey(identityKeyPair, keyId).then(function (signedPreKey) {
+            store.storeSignedPreKey(signedPreKey.keyId, signedPreKey.keyPair);
+        });
+
+    </script>
+    <title>message</title>
+</head>
+
+<body>
+    <form action="" method="POST" onsubmit="event.preventDefault(); signMessage()">
+        <input name="message" type="text">
+        <input type="submit">
+    </form>
+</body>
+
+</html>
