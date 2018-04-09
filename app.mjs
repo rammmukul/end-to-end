@@ -10,10 +10,9 @@ db.serialize(function () {
 })
 
 router.post('/', function () {
-  let message = this.body.message
-  console.log('this.body', this.body)
+  console.log(this.body)
   var stmt = db.prepare('INSERT INTO clients VALUES (?)')
-  stmt.run(message)
+  stmt.run(JSON.stringify(this.body.registrationId))
   stmt.finalize()
   db.each('SELECT rowid AS id, info FROM clients', (err, row) => {
     console.log('db', row)

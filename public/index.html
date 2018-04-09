@@ -8,27 +8,51 @@
   <script src="./helper.js"></script>
   <script>
     let keyHelper = libsignal.KeyHelper
-    let registrationId = keyHelper.generateRegistrationId()
     let store = new SignalProtocolStore()
+    let registrationId = keyHelper.generateRegistrationId()
 
     localStorage.setItem('registrationId', registrationId)
-    let pub, pri, keyPair
-    keyHelper.generateIdentityKeyPair().then(identityKeyPair => {
-      console.log(identityKeyPair)
-      store.put('identityKey', keyPairToString(identityKeyPair))
+    let pubIdentityKey, pubSignedPreKey, signature, pubPreKey
 
-      let keyId = Math.floor(Math.random() * 999) //replace with uid
+    keyHelper.generateIdentityKeyPair()
+      .then(identityKeyPair => {
+        console.log(identityKeyPair)
+        pubIdentityKey = arrayBufferToString(identityKeyPair.pubKey)
+        store.put('identityKey', keyPairToString(identityKeyPair))
 
-      keyHelper.generatePreKey(keyId).then(function (preKey) {
-        console.log(preKey)
-        store.storePreKey(preKey.keyId, keyPairToString(preKey.keyPair));
+        let keyId = Math.floor(Math.random() * 99999) //replace with uid
+
+        keyHelper.generatePreKey(keyId)
+          .then((preKey) => {
+            console.log(preKey)
+            store.storePreKey(preKey.keyId, keyPairToString(preKey.keyPair));
+          }).then(() =>
+            keyHelper.generateSignedPreKey(identityKeyPair, keyId)
+            .then((signedPreKey) => {
+              console.log(signedPreKey)
+              pubSignedPreKey = arrayBufferToString(signedPreKey.keyPair.pubKey)
+              signature = arrayBufferToString(signedPreKey.signature)
+              store.storeSignedPreKey(signedPreKey.keyId, keyPairToString(signedPreKey.keyPair));
+            })
+          ).then(() => {
+            let registrationData = {
+              registrationId: registrationId,
+              identityKey: pubIdentityKey,
+              pubSignedPreKey: pubSignedPreKey,
+              signature: signature
+            }
+
+            fetch('http://localhost:5000/', {
+                method: 'POST', // or 'PUT'
+                body: JSON.stringify(registrationData), // data can be `string` or {object}!
+                headers: new Headers({
+                  'Content-Type': 'application/json'
+                })
+              }).then(res => res.json())
+              .catch(error => console.error('Error:', error))
+              .then(response => console.log('Success:', response));
+          })
       })
-
-      keyHelper.generateSignedPreKey(identityKeyPair, keyId).then(function (signedPreKey) {
-        console.log(signedPreKey)
-        store.storeSignedPreKey(signedPreKey.keyId, keyPairToString(signedPreKey.keyPair));
-      })
-    })
   </script>
   <title>message</title>
 </head>
