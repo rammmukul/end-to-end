@@ -14,45 +14,43 @@
     localStorage.setItem('registrationId', registrationId)
     let pubIdentityKey, pubSignedPreKey, signature, pubPreKey
 
-    keyHelper.generateIdentityKeyPair()
-      .then(identityKeyPair => {
-        console.log(identityKeyPair)
-        pubIdentityKey = arrayBufferToString(identityKeyPair.pubKey)
-        store.put('identityKey', keyPairToString(identityKeyPair))
+    async function init() {
+      let identityKeyPair = await keyHelper.generateIdentityKeyPair()
+      console.log(identityKeyPair)
+      pubIdentityKey = arrayBufferToString(identityKeyPair.pubKey)
+      store.put('identityKey', keyPairToString(identityKeyPair))
 
-        let keyId = Math.floor(Math.random() * 99999) //replace with uid
+      let keyId = Math.floor(Math.random() * 99999) //replace with uid
 
-        keyHelper.generatePreKey(keyId)
-          .then((preKey) => {
-            console.log(preKey)
-            store.storePreKey(preKey.keyId, keyPairToString(preKey.keyPair));
-          }).then(() =>
-            keyHelper.generateSignedPreKey(identityKeyPair, keyId)
-            .then((signedPreKey) => {
-              console.log(signedPreKey)
-              pubSignedPreKey = arrayBufferToString(signedPreKey.keyPair.pubKey)
-              signature = arrayBufferToString(signedPreKey.signature)
-              store.storeSignedPreKey(signedPreKey.keyId, keyPairToString(signedPreKey.keyPair));
-            })
-          ).then(() => {
-            let registrationData = {
-              registrationId: registrationId,
-              identityKey: pubIdentityKey,
-              pubSignedPreKey: pubSignedPreKey,
-              signature: signature
-            }
+      let preKey = await keyHelper.generatePreKey(keyId)
+      console.log(preKey)
+      store.storePreKey(preKey.keyId, keyPairToString(preKey.keyPair));
 
-            fetch('http://localhost:5000/', {
-                method: 'POST', // or 'PUT'
-                body: JSON.stringify(registrationData), // data can be `string` or {object}!
-                headers: new Headers({
-                  'Content-Type': 'application/json'
-                })
-              }).then(res => res.json())
-              .catch(error => console.error('Error:', error))
-              .then(response => console.log('Success:', response));
+      let signedPreKey = await keyHelper.generateSignedPreKey(identityKeyPair, keyId)
+      console.log(signedPreKey)
+      pubSignedPreKey = arrayBufferToString(signedPreKey.keyPair.pubKey)
+      signature = arrayBufferToString(signedPreKey.signature)
+      store.storeSignedPreKey(signedPreKey.keyId, keyPairToString(signedPreKey.keyPair));
+
+      let registrationData = {
+        registrationId: registrationId,
+        identityKey: pubIdentityKey,
+        pubSignedPreKey: pubSignedPreKey,
+        signature: signature
+      }
+
+      fetch('http://localhost:5000/', {
+          method: 'POST', // or 'PUT'
+          body: JSON.stringify(registrationData), // data can be `string` or {object}!
+          headers: new Headers({
+            'Content-Type': 'application/json'
           })
-      })
+        }).then(res => res.json())
+        .catch(error => console.error('Error:', error))
+        .then(response => console.log('Success:', response));
+    }
+
+    init()
   </script>
   <title>message</title>
 </head>
