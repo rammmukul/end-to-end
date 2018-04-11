@@ -3,7 +3,8 @@ let store = new SignalProtocolStore()
 let registrationId = keyHelper.generateRegistrationId()
 
 localStorage.setItem('registrationId', registrationId)
-let pubIdentityKey, pubSignedPreKey, signature, pubPreKey
+let pubIdentityKey, pubSignedPreKey, signature
+let pubPreKeys = []
 
 async function init() {
   let identityKeyPair = await keyHelper.generateIdentityKeyPair()
@@ -11,12 +12,18 @@ async function init() {
   pubIdentityKey = arrayBufferToString(identityKeyPair.pubKey)
   store.put('identityKey', keyPairToString(identityKeyPair))
 
+  for (let i = 0; i < 100; i++) {
+    let keyId = Math.floor(Math.random() * 99999) //replace with uid
+    let preKey = await keyHelper.generatePreKey(keyId)
+    console.log(preKey)
+    store.storePreKey(preKey.keyId, keyPairToString(preKey.keyPair));
+    pubPreKeys.push({
+      keyId: keyId,
+      pubKey: arrayBufferToString(preKey.keyPair.pubKey)
+    })
+  }
+  
   let keyId = Math.floor(Math.random() * 99999) //replace with uid
-
-  let preKey = await keyHelper.generatePreKey(keyId)
-  console.log(preKey)
-  store.storePreKey(preKey.keyId, keyPairToString(preKey.keyPair));
-
   let signedPreKey = await keyHelper.generateSignedPreKey(identityKeyPair, keyId)
   console.log(signedPreKey)
   pubSignedPreKey = arrayBufferToString(signedPreKey.keyPair.pubKey)
@@ -27,6 +34,7 @@ async function init() {
     registrationId: registrationId,
     identityKey: pubIdentityKey,
     pubSignedPreKey: pubSignedPreKey,
+    pubPreKeys: pubPreKeys,
     signature: signature
   }
 
@@ -36,9 +44,9 @@ async function init() {
       headers: new Headers({
         'Content-Type': 'application/json'
       })
-    }).then(res => res.json())
+    }).then(res => res.text())
     .catch(error => console.error('Error:', error))
-    .then(response => console.log('Success:', response));
+    .then(response => console.log('Success:', response))
 }
 
 init()

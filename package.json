@@ -1,0 +1,25 @@
+{
+  "name": "endtoend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.mjs",
+  "dependencies": {
+    "fsevents": "^1.1.3",
+    "sqlite3": "^4.0.0",
+    "turbo-serv": "^0.1.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rammmukul/end-to-end.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rammmukul/end-to-end/issues"
+  },
+  "homepage": "https://github.com/rammmukul/end-to-end#readme"
+}
