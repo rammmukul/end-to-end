@@ -34,7 +34,7 @@ async function init() {
     registrationId: registrationId,
     identityKey: pubIdentityKey,
     pubSignedPreKey: pubSignedPreKey,
-    pubPreKeys: pubPreKeys,
+    //pubPreKeys: pubPreKeys,
     signature: signature
   }
 
@@ -46,7 +46,7 @@ async function init() {
       })
     }).then(res => res.text())
     .catch(error => console.error('Error:', error))
-    .then(response => console.log('Success:', response))
+    .then(response => console.log('Success:', response, response.length))
 }
 
 init()

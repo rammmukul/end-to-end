@@ -6,7 +6,7 @@ let router = app.getRouter()
 let db = new sqlite.Database(':memory:')
 
 db.serialize(function () {
-  db.run(`CREATE TABLE users (registrationId,
+  db.run(`CREATE TABLE users (registrationId PRIMARY KEY,
                               pubSignedPreKey,
                               signature,
                               prekeys TEXT,
@@ -14,18 +14,19 @@ db.serialize(function () {
 })
 
 router.post('/', function () {
-  console.log(this.body)
+  console.log(this)
+  //console.log(this.body)
   let stmt = db.prepare(`INSERT INTO users VALUES ($registrationId,
     $pubSignedPreKey,
     $signature,
     $prekeys,
     $identityKey)`)
-  
+
   stmt.run({
     $registrationId: this.body.registrationId,
     $pubSignedPreKey: this.body.pubSignedPreKey,
     $signature: this.body.signature,
-    $prekeys: JSON.stringify(this.body.pubPreKeys),
+    //$prekeys: JSON.stringify(this.body.pubPreKeys),
     $identityKey: this.body.identityKey
   })
   stmt.finalize()
@@ -34,11 +35,12 @@ router.post('/', function () {
                           registrationId,
                           pubSignedPreKey,
                           signature,
-                          prekeys,
                           identityKey
-                        FROM users`, (err, row) => {
-    console.log('db>>>', row)
-    this.res.send(row)
+                        FROM users`, 
+          (err, row) => {
+    let result = JSON.stringify(row)
+    console.log('db>>>', result)
+    this.res.send(result)
   })
 })
 

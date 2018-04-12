@@ -1,14 +1,17 @@
 function stringToArrayBuffer(str) {
-  var arr = new Uint8Array(str.length);
-  for (var i = str.length; i--;)
-    arr[i] = str.charCodeAt(i);
-  return arr.buffer;
+  str = unescape(atob(str))
+  let arr = new Uint8Array(str.length)
+  for (let i = str.length; i--;)
+    arr[i] = str.charCodeAt(i)
+  return arr.buffer
 }
 
 function arrayBufferToString(buffer) {
-  var arr = new Uint8Array(buffer);
-  var str = String.fromCharCode.apply(String, arr);
-  return str;
+  console.log('buffff', btoa(buffer))
+  let arr = new Uint8Array(buffer)
+  let textDecoder = new TextDecoder('utf-8')
+  //let str = String.fromCharCode(...arr)
+  return btoa(escape(textDecoder.decode(arr)))
 }
 
 function keyPairToString(keyPair) {
@@ -16,8 +19,8 @@ function keyPairToString(keyPair) {
     pubKey: arrayBufferToString(keyPair.pubKey),
     privKey: arrayBufferToString(keyPair.privKey)
   }
-  var str = JSON.stringify(obj)
-  return str;
+  let str = JSON.stringify(obj)
+  return str
 }
 
 function stringToKeyPair(str) {
@@ -26,5 +29,5 @@ function stringToKeyPair(str) {
     pubKey: stringToArrayBuffer(obj.pubKey),
     privKey: stringToArrayBuffer(obj.privKey)
   }
-  return obj;
+  return obj
 }
