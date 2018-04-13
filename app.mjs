@@ -9,38 +9,63 @@ db.serialize(function () {
   db.run(`CREATE TABLE users (registrationId PRIMARY KEY,
                               pubSignedPreKey,
                               signature,
-                              prekeys TEXT,
                               identityKey)`)
+  db.run(`CREATE TABLE preKeys (registrationId, keyId, pubPreKey)`)
 })
 
-router.post('/', function () {
-  console.log(this)
-  //console.log(this.body)
+router.post('/register', function () {
   let stmt = db.prepare(`INSERT INTO users VALUES ($registrationId,
     $pubSignedPreKey,
     $signature,
-    $prekeys,
     $identityKey)`)
 
   stmt.run({
     $registrationId: this.body.registrationId,
     $pubSignedPreKey: this.body.pubSignedPreKey,
     $signature: this.body.signature,
-    //$prekeys: JSON.stringify(this.body.pubPreKeys),
     $identityKey: this.body.identityKey
   })
   stmt.finalize()
 
-  db.each(`SELECT rowid AS id,
-                          registrationId,
-                          pubSignedPreKey,
-                          signature,
-                          identityKey
-                        FROM users`, 
-          (err, row) => {
-    let result = JSON.stringify(row)
-    console.log('db>>>', result)
-    this.res.send(result)
+  let preStmt
+  this.body.pubPreKeys.forEach(keyObj => {
+    preStmt = db.prepare(`INSERT INTO preKeys VALUES ($registrationId, $keyId, $pubPreKey)`)
+    preStmt.run({
+      $registrationId: this.body.registrationId,
+      $keyId: keyObj.keyId,
+      $pubPreKey: keyObj.pubKey
+    })
+    preStmt.finalize()
+  })
+
+  db.each(`SELECT registrationId,
+              pubSignedPreKey,
+              signature,
+              identityKey
+            FROM users`,
+    (err, row) => {
+      this.res.send(row || err)
+    })
+})
+
+router.get('/users', function () {
+  db.all(`SELECT registrationId,
+              pubSignedPreKey,
+              signature,
+              identityKey
+            FROM users`,
+    (err, row) => {
+      let result = row
+      this.res.send(result)
+    })
+})
+
+router.post('/newSession', function () {
+  console.log(this.body)
+  let registrationId = this.body
+  let stmt = db.prepare(`SELECT * FROM users NATURAL JOIN prekeys WHERE registrationId = $registrationId`)
+  stmt.get({$registrationId: registrationId}, (err, row) => {
+    this.res.send(row)
   })
 })
 

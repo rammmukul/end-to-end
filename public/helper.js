@@ -1,17 +1,10 @@
 function stringToArrayBuffer(str) {
-  str = unescape(atob(str))
-  let arr = new Uint8Array(str.length)
-  for (let i = str.length; i--;)
-    arr[i] = str.charCodeAt(i)
-  return arr.buffer
+  return new Uint8Array(str.split(',').map(x => Number(x)))
 }
 
 function arrayBufferToString(buffer) {
-  console.log('buffff', btoa(buffer))
   let arr = new Uint8Array(buffer)
-  let textDecoder = new TextDecoder('utf-8')
-  //let str = String.fromCharCode(...arr)
-  return btoa(escape(textDecoder.decode(arr)))
+  return Array.from(arr).join()
 }
 
 function keyPairToString(keyPair) {
