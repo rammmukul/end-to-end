@@ -8,20 +8,24 @@ let db = new sqlite.Database(':memory:')
 db.serialize(function () {
   db.run(`CREATE TABLE users (registrationId PRIMARY KEY,
                               pubSignedPreKey,
+                              signKeyId,
                               signature,
                               identityKey)`)
   db.run(`CREATE TABLE preKeys (registrationId, keyId, pubPreKey)`)
 })
 
 router.post('/register', function () {
+  console.log(this.body)
   let stmt = db.prepare(`INSERT INTO users VALUES ($registrationId,
     $pubSignedPreKey,
+    $signKeyId,
     $signature,
     $identityKey)`)
 
   stmt.run({
     $registrationId: this.body.registrationId,
     $pubSignedPreKey: this.body.pubSignedPreKey,
+    $signKeyId: this.body.signKeyId,
     $signature: this.body.signature,
     $identityKey: this.body.identityKey
   })
@@ -38,22 +42,14 @@ router.post('/register', function () {
     preStmt.finalize()
   })
 
-  db.each(`SELECT registrationId,
-              pubSignedPreKey,
-              signature,
-              identityKey
-            FROM users`,
+  db.each(`SELECT * FROM users`,
     (err, row) => {
       this.res.send(row || err)
     })
 })
 
 router.get('/users', function () {
-  db.all(`SELECT registrationId,
-              pubSignedPreKey,
-              signature,
-              identityKey
-            FROM users`,
+  db.all(`SELECT * FROM users`,
     (err, row) => {
       let result = row
       this.res.send(result)
@@ -65,6 +61,7 @@ router.post('/newSession', function () {
   let registrationId = this.body
   let stmt = db.prepare(`SELECT * FROM users NATURAL JOIN prekeys WHERE registrationId = $registrationId`)
   stmt.get({$registrationId: registrationId}, (err, row) => {
+    console.log(row)
     this.res.send(row)
   })
 })

@@ -1,4 +1,4 @@
-function SignalProtocolStore () {
+function SignalProtocolStore() {
   this.store = localStorage
 }
 
@@ -17,13 +17,13 @@ SignalProtocolStore.prototype = {
   put: function (key, value) {
     if (key === undefined || value === undefined || key === null || value === null)
       throw new Error("Tried to store undefined/null")
-    this.store.setItem(key, value)
+    this.store.setItem(key, stringifyValues(value))
   },
   get: function (key, defaultValue) {
     if (key === null || key === undefined)
       throw new Error("Tried to get value for undefined/null key")
     if (key in this.store) {
-      return this.store.getItem(key)
+      return bufferise(this.store.getItem(key))
     } else {
       return defaultValue
     }

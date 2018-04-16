@@ -1,26 +1,24 @@
+let signal = libsignal
 let keyHelper = libsignal.KeyHelper
 let store = new SignalProtocolStore()
 let pubIdentityKey, pubSignedPreKey, signature
 let pubPreKeys = []
 
-async function init() {
-  if (await store.getIdentityKeyPair() && await store.getLocalRegistrationId()) {
-    return
-  }
+async function init () {
+  if (await store.getIdentityKeyPair() && await store.getLocalRegistrationId()) return null
 
   let registrationId = keyHelper.generateRegistrationId()
   localStorage.setItem('registrationId', registrationId)
 
   let identityKeyPair = await keyHelper.generateIdentityKeyPair()
-  console.log(identityKeyPair)
   pubIdentityKey = arrayBufferToString(identityKeyPair.pubKey)
-  store.put('identityKey', keyPairToString(identityKeyPair))
+  store.put('identityKey', JSON.stringify(stringifyValues(identityKeyPair)))
 
   for (let i = 0; i < 5; i++) {
     let keyId = Math.ceil(Math.random() * 99999) //replace with uid
     let preKey = await keyHelper.generatePreKey(keyId)
     console.log(preKey)
-    store.storePreKey(preKey.keyId, keyPairToString(preKey.keyPair));
+    store.storePreKey(preKey.keyId, JSON.stringify(stringifyValues(preKey.keyPair)))
     pubPreKeys.push({
       keyId: keyId,
       pubKey: arrayBufferToString(preKey.keyPair.pubKey)
@@ -30,14 +28,16 @@ async function init() {
   let keyId = Math.ceil(Math.random() * 99999) //replace with uid
   let signedPreKey = await keyHelper.generateSignedPreKey(identityKeyPair, keyId)
   console.log(signedPreKey)
-  pubSignedPreKey = arrayBufferToString(signedPreKey.keyPair.pubKey)
-  signature = arrayBufferToString(signedPreKey.signature)
-  store.storeSignedPreKey(signedPreKey.keyId, keyPairToString(signedPreKey.keyPair));
+  let pubSignedPreKey = arrayBufferToString(signedPreKey.keyPair.pubKey)
+  let signKeyId = signedPreKey.keyId
+  let signature = arrayBufferToString(signedPreKey.signature)
+  store.storeSignedPreKey(signedPreKey.keyId, JSON.stringify(stringifyValues(signedPreKey.keyPair)))
 
   let registrationData = {
     registrationId: registrationId,
     identityKey: pubIdentityKey,
     pubSignedPreKey: pubSignedPreKey,
+    signKeyId: signKeyId,
     pubPreKeys: pubPreKeys,
     signature: signature
   }
@@ -78,7 +78,7 @@ init().then(() => {
     })
 })
 
-function openChat(registrationId) {
+function openChat (registrationId) {
   let app = document.getElementById('app')
   app.innerHTML = ''
   window.recever = registrationId
@@ -92,9 +92,41 @@ function openChat(registrationId) {
           headers: new Headers({
             'Content-Type': 'application/json'
           })
-        }).then(res => res.text())
+      }).then(res => res.json())
         .catch(error => console.error('Error:', error))
-        .then(response => console.log('Success:', response, response.length))
+        .then(res => {
+          console.log(res)
+          let address = new libsignal.SignalProtocolAddress(res.registrationId, res.registrationId)
+          let sessionBuilder = new libsignal.SessionBuilder(store, address)
+          let promise = sessionBuilder.processPreKey({
+            registrationId: Number(res.registrationId),
+            identityKey: stringToArrayBuffer(res.identityKey),
+            signedPreKey: {
+              keyId: Number(res.signKeyId),
+              publicKey: stringToArrayBuffer(res.pubSignedPreKey),
+              signature: stringToArrayBuffer(res.signature)
+            },
+            preKey: {
+              keyId: Number(res.keyId),
+              publicKey: stringToArrayBuffer(res.pubPreKey)
+            }
+          })
+
+          promise.then(() => {
+            // encrypt messages
+            console.log('yahoooooooooooooo')
+            let plaintext = "Hello world"
+            let sessionCipher = new signal.SessionCipher(store, address)
+            sessionCipher.encrypt(plaintext).then(function(ciphertext) {
+                // ciphertext -> { type: <Number>, body: <string> }
+                console.log(ciphertext.type, ciphertext.body)
+            })
+          })
+
+          promise.catch(function onerror(error) {
+            // handle identity key conflict
+          })
+        })
     }
   })
   app.appendChild(input)
